@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.example.triviaapp.screens.QuestionsViewModel
 import com.example.triviaapp.util.AppColors
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.text.style.TextAlign
 import com.example.triviaapp.model.QuestionItem
 
 @Composable
@@ -51,7 +54,7 @@ fun Questions(viewModel: QuestionsViewModel) {
     val questions = viewModel.data.value.data?.toMutableList()
 
     val questionIndex = remember {
-        mutableStateOf(1)
+        mutableStateOf(0)
     }
 
     if(viewModel.data.value.loading == true){
@@ -114,7 +117,9 @@ fun QuestionDisplay(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start)
         {
-            QuestionTracker(counter = questionIndex.value,)
+            if(questionIndex.value >= 3) ShowProgress(score = questionIndex.value)
+
+            QuestionTracker(counter = questionIndex.value, outOf = viewModel.data.value.data?.size?:0)
             DrawDottedLine(pathEffect)
 
             Column() {
@@ -221,6 +226,53 @@ fun DrawDottedLine(pathEffect: PathEffect){
     }
 }
 
+@Preview
+@Composable
+fun ShowProgress(score: Int = 1){
+
+    val gradient = Brush.linearGradient(listOf(Color(0xFFF95075), Color(0xFFBE6BE5)))
+
+    val progressFactor = remember(score){
+        mutableStateOf(score * 0.01f)
+    }
+
+    Row(modifier = Modifier.padding(3.dp)
+        .fillMaxWidth()
+        .height(45.dp)
+        .border(width = 4.dp, brush = Brush.linearGradient(colors = listOf(
+            AppColors.mLightPurple, AppColors.mLightPurple)),
+            shape = RoundedCornerShape(34.dp))
+        .clip(RoundedCornerShape(topEndPercent = 50,
+            bottomStartPercent = 50,
+            topStartPercent = 50,
+            bottomEndPercent = 50))
+        .background(Color.Transparent),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Button(
+            contentPadding = PaddingValues(1.dp), onClick = {},
+            modifier = Modifier
+                .fillMaxWidth(progressFactor.value)
+                .background(brush = gradient, shape = RoundedCornerShape(35.dp)),
+            enabled = false,
+            elevation = null,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent
+            ),
+            content = {
+                Text(text = (score*10).toString(),
+                    modifier = Modifier.clip(shape = RoundedCornerShape(23.dp))
+                        .fillMaxHeight(0.87f)
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    color = AppColors.mOffWhite,
+                    textAlign = TextAlign.Center)
+            }
+        )
+    }
+}
+
 
 @Composable
 fun QuestionTracker(counter: Int = 10,
@@ -230,12 +282,11 @@ fun QuestionTracker(counter: Int = 10,
             withStyle(style = SpanStyle(color = AppColors.mLightGray,
                 fontWeight = FontWeight.Bold,
                 fontSize = 27.sp)){
-                    append("Question $counter/")
+                    append("Question ${counter +1}/")
                     withStyle(style = SpanStyle(color = AppColors.mLightGray,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp)){
                         append("$outOf")
-
                     }
             }
 
